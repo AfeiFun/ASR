@@ -1,0 +1,20 @@
+# 核心语音识别
+funasr>=1.2.7
+
+# GPU加速支持 (PyTorch)
+torch>=2.8.0
+torchaudio>=2.8.0
+
+# 视频和音频处理
+moviepy>=2.2.1
+soundfile>=0.13.1
+librosa>=0.11.0
+
+# 数值计算
+numpy>=2.2.6
+scipy>=1.16.1
+
+# 注意：
+# - pathlib, argparse, tempfile, os, sys, typing 等为Python标准库，无需安装
+# - Apple Silicon Mac 会自动使用 MPS 加速
+# - NVIDIA GPU 用户需要额外安装 CUDA 工具包
