@@ -10,7 +10,7 @@ class ASRTranscriber:
     基于FunASR的语音转文字转录器
     """
     
-    def __init__(self, model_name="iic/SenseVoiceSmall", vad_model="fsmn-vad", device="auto"):
+    def __init__(self, model_name="iic/SenseVoiceSmall", vad_model="fsmn-vad", device="auto", enable_vad=True):
         """
         初始化ASR转录器
         
@@ -18,9 +18,11 @@ class ASRTranscriber:
             model_name (str): ASR模型名称
             vad_model (str): VAD(语音活动检测)模型名称
             device (str): 设备类型 ("cpu", "cuda", "mps", "auto")
+            enable_vad (bool): 是否启用VAD (默认: True)
         """
         self.model_name = model_name
-        self.vad_model = vad_model
+        self.vad_model = vad_model if enable_vad else None
+        self.enable_vad = enable_vad
         self.device = self._get_optimal_device(device)
         self.model = None
         self._load_model()
@@ -55,12 +57,20 @@ class ASRTranscriber:
         """
         try:
             print(f"正在加载模型: {self.model_name}...")
-            self.model = AutoModel(
-                model=self.model_name,
-                vad_model=self.vad_model,
-                vad_kwargs={"max_single_segment_time": 30000},  # VAD配置
-                device=self.device
-            )
+            if self.enable_vad:
+                print("VAD已启用，将使用智能语音分段")
+                self.model = AutoModel(
+                    model=self.model_name,
+                    vad_model=self.vad_model,
+                    vad_kwargs={"max_single_segment_time": 15000},  # VAD配置，15秒分段
+                    device=self.device
+                )
+            else:
+                print("VAD已禁用，将整体处理音频")
+                self.model = AutoModel(
+                    model=self.model_name,
+                    device=self.device
+                )
             print("模型加载成功！")
         except Exception as e:
             raise Exception(f"模型加载失败: {str(e)}")
@@ -91,8 +101,9 @@ class ASRTranscriber:
         try:
             print(f"正在转录音频文件: {audio_path}")
             
-            # 固定设置batch_size_s为300，优化处理速度
-            batch_size_s = 300
+            # 使用传入的batch_size作为batch_size_s（动态批处理秒数）
+            # 如果batch_size较小，扩大到合理值以提高效率
+            batch_size_s = min(batch_size, 6000)  # 最大6000秒批处理
             # 设置合理的合并长度，避免片段过短
             merge_length_s = min(max_length, 30)
             
@@ -103,12 +114,11 @@ class ASRTranscriber:
                 input=audio_path,
                 language=language if language != "auto" else None,
                 batch_size_s=batch_size_s,    # 动态批处理大小(秒)
-                batch_size=batch_size,        # 批处理大小
                 hotword=None,                 # 热词增强
                 use_itn=True,                # 使用逆文本规范化
                 output_timestamp=True,        # 启用时间戳输出
-                merge_vad=True,              # 启用VAD合并
-                merge_length_s=merge_length_s, # VAD片段合并长度
+                merge_vad=False,             # 默认不启用VAD合并
+                # merge_length_s=merge_length_s, # VAD片段合并长度
                 return_raw_text=True         # 返回原始文本
             )
             
@@ -326,7 +336,7 @@ class ASRTranscriber:
             })
             
             # 判断是否应该结束当前segment（遇到句号、问号、感叹号）
-            if word in ['。', '！', '？', '.', '!', '?'] or i == len(words) - 1:
+            if word in ['。', '！', '？', '.', '!', '?',',','，'] or i == len(words) - 1:
                 if current_segment["text"].strip():
                     segments.append({
                         "text": current_segment["text"],

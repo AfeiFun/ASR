@@ -109,15 +109,21 @@ def setup_argparse():
     parser.add_argument(
         "--max-length",
         type=int,
-        default=30,
-        help="VAD片段合并最大长度(秒)，用于控制字幕片段长度 (默认: 30秒)"
+        default=5,
+        help="VAD片段合并最大长度(秒)，用于控制字幕片段长度 (默认: 5秒)"
     )
     
     parser.add_argument(
         "--batch-size",
         type=int,
-        default=8,
-        help="批处理大小，GPU加速时可适当增大 (默认: 8)"
+        default=600,
+        help="批处理大小，GPU加速时可适当增大 (默认: 600)"
+    )
+    
+    parser.add_argument(
+        "--vad-off",
+        action="store_true",
+        help="禁用VAD语音活动检测 (默认: 启用VAD)"
     )
     
     return parser
@@ -182,7 +188,8 @@ def main():
         transcriber = ASRTranscriber(
             model_name=args.model,
             vad_model=args.vad_model,
-            device=args.device
+            device=args.device,
+            enable_vad=not args.vad_off
         )
         
         # 执行转录
