@@ -70,3 +70,6 @@ logs/
 # Output files
 *_transcription.*
 output.*
+
+# shell
+asr.sh
