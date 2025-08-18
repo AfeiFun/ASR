@@ -27,7 +27,7 @@ A high-performance local video transcription tool powered by [FunASR](https://gi
 ### 1. Clone Repository
 
 ```bash
-git clone https://github.com/your-username/ASR.git
+git clone https://github.com/AfeiFun/ASR.git
 cd ASR
 ```
 
