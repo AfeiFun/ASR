@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "asr-transcriber": {
+      "command": "/path/to/ASR/asr/bin/python",
+      "args": ["/path/to/ASR/mcp_server.py"],
+      "cwd": "/path/to/ASR",
+      "env": {
+        "PYTHONPATH": "/path/to/ASR",
+        "VIRTUAL_ENV": "/path/to/ASR/asr"
+      }
+    }
+  }
+}

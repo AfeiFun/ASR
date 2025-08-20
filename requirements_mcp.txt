@@ -1,0 +1,42 @@
+# MCP服务器专用依赖文件
+# 包含所有运行MCP服务器所需的依赖
+
+# MCP框架
+fastmcp>=1.2.0
+pydantic>=2.0.0
+
+# 视频下载工具
+yt-dlp>=2024.1.0
+
+# ASR核心语音识别
+funasr>=1.2.7
+
+# GPU加速支持 (PyTorch)
+torch>=2.8.0
+torchaudio>=2.8.0
+
+# 视频和音频处理
+moviepy>=2.2.1
+soundfile>=0.13.1
+librosa>=0.11.0
+
+# 数值计算
+numpy>=2.2.6
+scipy>=1.16.1
+
+# 异步和并发支持
+asyncio-mqtt>=0.13.0  # 如果需要MQTT支持
+aiofiles>=23.0.0      # 异步文件操作
+
+# 日志和调试
+loguru>=0.7.0         # 更好的日志系统
+
+# 注意事项：
+# - 确保已安装yt-dlp命令行工具：pip install yt-dlp 或 brew install yt-dlp
+# - Apple Silicon Mac 会自动使用 MPS 加速
+# - NVIDIA GPU 用户需要额外安装 CUDA 工具包
+# - 建议使用虚拟环境安装依赖：python -m venv venv && source venv/bin/activate
+# - pathlib, argparse, tempfile, os, sys, typing 等为Python标准库，无需单独安装
+
+# 安装命令：
+# pip install -r requirements_mcp.txt

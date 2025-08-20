@@ -1,0 +1,152 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "asr-mcp-server"
+version = "1.0.0"
+description = "ASR MCP服务器 - 支持视频URL转写的Model Context Protocol服务"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "MIT"}
+authors = [
+    {name = "ASR Team", email = "noreply@example.com"}
+]
+keywords = ["ASR", "MCP", "video", "transcription", "speech-recognition"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Video",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    # MCP框架
+    "fastmcp>=1.2.0",
+    "pydantic>=2.0.0",
+    
+    # 视频下载
+    "yt-dlp>=2024.1.0",
+    
+    # ASR核心依赖
+    "funasr>=1.2.7",
+    "torch>=2.8.0",
+    "torchaudio>=2.8.0",
+    
+    # 视频和音频处理
+    "moviepy>=2.2.1",
+    "soundfile>=0.13.1",
+    "librosa>=0.11.0",
+    
+    # 数值计算
+    "numpy>=2.2.6",
+    "scipy>=1.16.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/AfeiFun/ASR"
+Repository = "https://github.com/AfeiFun/ASR"
+Issues = "https://github.com/AfeiFun/ASR/issues"
+Documentation = "https://github.com/AfeiFun/ASR#readme"
+
+[project.scripts]
+asr-mcp = "mcp_server:main"
+
+[tool.setuptools]
+packages = ["asr_transcriber", "video_processor", "video_downloader", "mcp_server"]
+
+[tool.setuptools.package-data]
+"*" = ["*.md", "*.txt", "*.json"]
+
+# MCP服务器配置
+[tool.mcp]
+name = "asr-transcriber"
+description = "视频/音频转文字MCP服务，支持URL下载和本地文件转录"
+version = "1.0.0"
+
+[tool.mcp.server]
+command = "python"
+args = ["mcp_server.py"]
+
+[tool.mcp.tools.transcribe_from_url]
+description = "从视频URL下载并转录为文字"
+input_schema = {
+    type = "object",
+    properties = {
+        url = {type = "string", description = "视频URL"},
+        output_format = {type = "string", enum = ["text", "srt", "vtt", "json"], default = "text"},
+        language = {type = "string", default = "auto"},
+        max_length = {type = "integer", default = 5},
+        batch_size = {type = "integer", default = 600},
+        enable_vad = {type = "boolean", default = true}
+    },
+    required = ["url"]
+}
+
+[tool.mcp.tools.transcribe_local_file]
+description = "转录本地视频/音频文件"
+input_schema = {
+    type = "object",
+    properties = {
+        file_path = {type = "string", description = "本地文件路径"},
+        output_format = {type = "string", enum = ["text", "srt", "vtt", "json"], default = "text"},
+        language = {type = "string", default = "auto"},
+        max_length = {type = "integer", default = 5},
+        batch_size = {type = "integer", default = 600},
+        enable_vad = {type = "boolean", default = true}
+    },
+    required = ["file_path"]
+}
+
+[tool.mcp.tools.get_video_info]
+description = "获取视频URL的详细信息"
+input_schema = {
+    type = "object",
+    properties = {
+        url = {type = "string", description = "视频URL"}
+    },
+    required = ["url"]
+}
+
+# Python代码格式化配置
+[tool.black]
+line-length = 100
+target-version = ["py39", "py310", "py311", "py312"]
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+# Pytest配置
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

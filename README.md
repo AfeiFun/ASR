@@ -333,9 +333,158 @@ ASR/
 那在这期列的视频当中呢，我主要是想分享一下我个人是如何认知AI小宇宙的...
 ```
 
+## 🤖 MCP服务器（推荐）
+
+本项目现已支持 **Model Context Protocol (MCP)** 服务器模式，可以直接在 **Claude Code** 或 **Claude Desktop** 中使用，支持从视频URL自动下载并转录！
+
+### MCP功能特性
+
+- 🌐 **URL直接转录**: 支持 YouTube、Bilibili 等500+平台视频URL
+- 📁 **本地文件转录**: 处理本地视频/音频文件
+- 🎯 **多格式输出**: text、srt、vtt、json 格式
+- 🤖 **智能分段**: 自动VAD语音活动检测 (5秒智能分段)
+- 🚀 **GPU加速**: 自动检测最佳设备 (MPS/CUDA/CPU)
+- ⚡ **高性能处理**: 批处理大小600，优化转录速度
+
+### 方法一：Claude Code 配置 (推荐)
+
+如果你使用 Claude Code，配置非常简单：
+
+1. **安装MCP依赖**:
+   ```bash
+   # 激活虚拟环境
+   source asr/bin/activate
+   
+   # 安装MCP依赖
+   pip install -r requirements_mcp.txt
+   ```
+
+2. **添加MCP服务器**:
+   ```bash
+   # 替换为你的实际路径
+   PYTHON_PATH="/path/to/ASR/asr/bin/python"
+   SERVER_PATH="/path/to/ASR/mcp_server.py"
+   
+   # 全局用户级别配置 (推荐)
+   claude mcp add asr-transcriber $PYTHON_PATH $SERVER_PATH --scope user
+   
+   # 或者项目级别配置
+   claude mcp add asr-transcriber $PYTHON_PATH $SERVER_PATH
+   ```
+
+3. **检查连接状态**:
+   ```bash
+   claude mcp list
+   ```
+   
+   应该显示：`asr-transcriber: ✓ Connected`
+
+4. **开始使用**:
+   
+   在 Claude Code 中直接对话：
+   ```
+   "请转写这个视频：https://www.youtube.com/watch?v=xxxxx"
+   "转写这个B站视频并生成SRT字幕：https://www.bilibili.com/video/BVxxxxx"
+   "分析这个本地视频文件：/path/to/video.mp4"
+   ```
+
+### 方法二：Claude Desktop 配置
+
+1. **安装MCP依赖** (同上)
+
+2. **找到Claude Desktop配置文件**:
+   - **macOS**: `~/Library/Application\ Support/Claude/claude_desktop_config.json`
+   - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+3. **编辑配置文件**，添加以下内容：
+   ```json
+   {
+     "mcpServers": {
+       "asr-transcriber": {
+         "command": "/path/to/ASR/asr/bin/python",
+         "args": ["/path/to/ASR/mcp_server.py"],
+         "cwd": "/path/to/ASR",
+         "env": {
+           "PYTHONPATH": "/path/to/ASR",
+           "VIRTUAL_ENV": "/path/to/ASR/asr"
+         }
+       }
+     }
+   }
+   ```
+   
+   **⚠️ 重要**: 请将 `/path/to/ASR` 替换为你的实际项目路径
+
+4. **重启Claude Desktop**
+
+### MCP可用工具
+
+| 工具名称 | 功能 | 参数 |
+|---------|------|------|
+| `transcribe_from_url` | 从URL下载并转录 | url, output_format, language |
+| `transcribe_local_file` | 转录本地文件 | file_path, output_format, language |
+| `get_video_info` | 获取视频信息 | url |
+| `list_supported_languages` | 列出支持的语言 | - |
+| `list_supported_platforms` | 列出支持的平台 | - |
+| `get_output_formats` | 获取输出格式说明 | - |
+
+### 支持的视频平台
+
+- 🔴 YouTube
+- 📺 Bilibili
+- 🐦 Twitter/X
+- 📱 TikTok
+- 📷 Instagram
+- 👥 Facebook
+- 🎬 Vimeo
+- 📹 Dailymotion
+- 还有更多...（500+平台）
+
+### MCP使用示例
+
+**基础转录**:
+```
+"转写这个视频：https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+```
+
+**生成字幕**:
+```
+"请将这个视频转录成SRT字幕格式：https://www.bilibili.com/video/BV1xx411c7mD"
+```
+
+**多语言支持**:
+```
+"转录这个英文视频并指定语言为英文：https://www.youtube.com/watch?v=xxxxx"
+```
+
+**本地文件处理**:
+```
+"转录这个本地音频文件：/path/to/audio.wav"
+```
+
+### 故障排除
+
+#### 常见问题
+
+1. **MCP服务器连接失败**:
+   - 检查Python路径是否正确
+   - 确保虚拟环境已激活并安装了所有依赖
+   - 使用 `claude mcp list` 检查状态
+
+2. **转录失败**:
+   - 确保yt-dlp已安装：`pip install yt-dlp`
+   - 检查网络连接
+   - 验证视频URL是否有效
+
+3. **GPU加速不工作**:
+   - 确认设备支持（Apple Silicon或NVIDIA GPU）
+   - 检查PyTorch安装：`python -c "import torch; print(torch.backends.mps.is_available())"`
+
 ## 技术支持
 
 - FunASR项目：https://github.com/modelscope/FunASR
+- yt-dlp项目：https://github.com/yt-dlp/yt-dlp
+- Model Context Protocol：https://modelcontextprotocol.io/
 - 问题反馈：请在项目Issue中提交
 
 ## 许可证

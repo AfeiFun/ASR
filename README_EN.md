@@ -312,9 +312,158 @@ Hello everyone, this is our first content in the AI field. It should be the firs
 In this series of videos, I mainly want to share how I personally understand the AI universe...
 ```
 
+## 🤖 MCP Server (Recommended)
+
+This project now supports **Model Context Protocol (MCP)** server mode, allowing direct use within **Claude Code** or **Claude Desktop** with support for automatic video URL download and transcription!
+
+### MCP Features
+
+- 🌐 **Direct URL Transcription**: Support YouTube, Bilibili and 500+ platforms
+- 📁 **Local File Transcription**: Process local video/audio files
+- 🎯 **Multiple Output Formats**: text, srt, vtt, json formats
+- 🤖 **Smart Segmentation**: Automatic VAD voice activity detection (5s intelligent segmentation)
+- 🚀 **GPU Acceleration**: Auto-detect optimal device (MPS/CUDA/CPU)
+- ⚡ **High Performance**: Batch size 600, optimized transcription speed
+
+### Method 1: Claude Code Setup (Recommended)
+
+If you're using Claude Code, setup is very simple:
+
+1. **Install MCP Dependencies**:
+   ```bash
+   # Activate virtual environment
+   source asr/bin/activate
+   
+   # Install MCP dependencies
+   pip install -r requirements_mcp.txt
+   ```
+
+2. **Add MCP Server**:
+   ```bash
+   # Replace with your actual paths
+   PYTHON_PATH="/path/to/ASR/asr/bin/python"
+   SERVER_PATH="/path/to/ASR/mcp_server.py"
+   
+   # Global user-level configuration (recommended)
+   claude mcp add asr-transcriber $PYTHON_PATH $SERVER_PATH --scope user
+   
+   # Or project-level configuration
+   claude mcp add asr-transcriber $PYTHON_PATH $SERVER_PATH
+   ```
+
+3. **Check Connection Status**:
+   ```bash
+   claude mcp list
+   ```
+   
+   Should show: `asr-transcriber: ✓ Connected`
+
+4. **Start Using**:
+   
+   Chat directly in Claude Code:
+   ```
+   "Please transcribe this video: https://www.youtube.com/watch?v=xxxxx"
+   "Transcribe this Bilibili video and generate SRT subtitles: https://www.bilibili.com/video/BVxxxxx"
+   "Analyze this local video file: /path/to/video.mp4"
+   ```
+
+### Method 2: Claude Desktop Setup
+
+1. **Install MCP Dependencies** (same as above)
+
+2. **Find Claude Desktop Config File**:
+   - **macOS**: `~/Library/Application\ Support/Claude/claude_desktop_config.json`
+   - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+
+3. **Edit Config File**, add the following:
+   ```json
+   {
+     "mcpServers": {
+       "asr-transcriber": {
+         "command": "/path/to/ASR/asr/bin/python",
+         "args": ["/path/to/ASR/mcp_server.py"],
+         "cwd": "/path/to/ASR",
+         "env": {
+           "PYTHONPATH": "/path/to/ASR",
+           "VIRTUAL_ENV": "/path/to/ASR/asr"
+         }
+       }
+     }
+   }
+   ```
+   
+   **⚠️ Important**: Replace `/path/to/ASR` with your actual project path
+
+4. **Restart Claude Desktop**
+
+### Available MCP Tools
+
+| Tool Name | Function | Parameters |
+|-----------|----------|------------|
+| `transcribe_from_url` | Download from URL and transcribe | url, output_format, language |
+| `transcribe_local_file` | Transcribe local file | file_path, output_format, language |
+| `get_video_info` | Get video information | url |
+| `list_supported_languages` | List supported languages | - |
+| `list_supported_platforms` | List supported platforms | - |
+| `get_output_formats` | Get output format descriptions | - |
+
+### Supported Video Platforms
+
+- 🔴 YouTube
+- 📺 Bilibili
+- 🐦 Twitter/X
+- 📱 TikTok
+- 📷 Instagram
+- 👥 Facebook
+- 🎬 Vimeo
+- 📹 Dailymotion
+- And many more... (500+ platforms)
+
+### MCP Usage Examples
+
+**Basic Transcription**:
+```
+"Transcribe this video: https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+```
+
+**Generate Subtitles**:
+```
+"Please transcribe this video to SRT subtitle format: https://www.bilibili.com/video/BV1xx411c7mD"
+```
+
+**Multi-language Support**:
+```
+"Transcribe this English video and specify language as English: https://www.youtube.com/watch?v=xxxxx"
+```
+
+**Local File Processing**:
+```
+"Transcribe this local audio file: /path/to/audio.wav"
+```
+
+### Troubleshooting
+
+#### Common Issues
+
+1. **MCP Server Connection Failed**:
+   - Check if Python path is correct
+   - Ensure virtual environment is activated and all dependencies are installed
+   - Use `claude mcp list` to check status
+
+2. **Transcription Failed**:
+   - Ensure yt-dlp is installed: `pip install yt-dlp`
+   - Check network connection
+   - Verify video URL is valid
+
+3. **GPU Acceleration Not Working**:
+   - Confirm device support (Apple Silicon or NVIDIA GPU)
+   - Check PyTorch installation: `python -c "import torch; print(torch.backends.mps.is_available())"`
+
 ## 🔗 Technical Support
 
 - FunASR Project: https://github.com/modelscope/FunASR
+- yt-dlp Project: https://github.com/yt-dlp/yt-dlp
+- Model Context Protocol: https://modelcontextprotocol.io/
 - Issue Reports: Please submit in project Issues
 
 ## 📄 License
