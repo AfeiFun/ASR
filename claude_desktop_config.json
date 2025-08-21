@@ -1,12 +1,12 @@
 {
   "mcpServers": {
     "asr-transcriber": {
-      "command": "/path/to/ASR/asr/bin/python",
-      "args": ["/path/to/ASR/mcp_server.py"],
-      "cwd": "/path/to/ASR",
+      "command": "/Users/fly/Code/ASR/asr/bin/python",
+      "args": ["/Users/fly/Code/ASR/mcp_server.py"],
+      "cwd": "/Users/fly/Code/ASR",
       "env": {
-        "PYTHONPATH": "/path/to/ASR",
-        "VIRTUAL_ENV": "/path/to/ASR/asr"
+        "PYTHONPATH": "/Users/fly/Code/ASR",
+        "VIRTUAL_ENV": "/Users/fly/Code/ASR/asr"
       }
     }
   }

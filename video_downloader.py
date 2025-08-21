@@ -129,13 +129,20 @@ class VideoDownloader:
             else:
                 output_template = str(output_dir / f"{safe_title}.%(ext)s")
             
-            cmd = [
-                self.yt_dlp_path,
-                "-f", format_selector,
-                "-o", output_template,
-                "--no-warnings",
-                url
-            ]
+            if audio_only:
+                cmd = [
+                    self.yt_dlp_path,
+                    "-o", output_template,
+                    "--no-warnings",
+                    url
+                ]
+            else:
+                cmd = [
+                    self.yt_dlp_path,
+                    "-o", output_template,
+                    "--no-warnings",
+                    url
+                ]
             
             # 如果只要音频，添加音频转换参数
             if audio_only:

@@ -71,6 +71,9 @@ logs/
 *_transcription.*
 output.*
 
+# MCP transcriptions output
+transcriptions/
+
 # shell
 asr.sh
 CLAUDE.md

@@ -324,6 +324,8 @@ This project now supports **Model Context Protocol (MCP)** server mode, allowing
 - 🤖 **Smart Segmentation**: Automatic VAD voice activity detection (5s intelligent segmentation)
 - 🚀 **GPU Acceleration**: Auto-detect optimal device (MPS/CUDA/CPU)
 - ⚡ **High Performance**: Batch size 600, optimized transcription speed
+- 💾 **Persistent File Storage**: Automatically saves downloaded videos, audio and transcription files
+- 📂 **Local Path Returns**: Provides complete local paths for all generated files
 
 ### Method 1: Claude Code Setup (Recommended)
 

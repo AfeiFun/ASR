@@ -6,7 +6,6 @@ ASR MCP服务器 V2 - 优化版本
 """
 
 import os
-import tempfile
 import json
 import sys
 from pathlib import Path
@@ -74,36 +73,83 @@ def transcribe_from_url(
         except Exception as e:
             return f"❌ 获取视频信息失败: {str(e)}"
         
-        # 创建临时目录
-        temp_dir = tempfile.mkdtemp(prefix="mcp_asr_")
+        # 创建持久输出目录
+        import datetime
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe_title = video_downloader._sanitize_filename(video_info['title'])[:50]  # 限制长度
+        output_dir = os.path.join(os.getcwd(), "transcriptions", f"{timestamp}_{safe_title}")
+        os.makedirs(output_dir, exist_ok=True)
+        
+        video_file_path = None
+        audio_file_path = None
+        transcript_file_path = None
         
         try:
-            # 下载音频（直接下载音频格式更高效）
-            print("🔽 开始下载音频...", file=sys.stderr)
-            audio_file = video_downloader.download_audio_only(url, temp_dir)
+            # 1. 下载视频文件
+            print("🔽 开始下载视频...", file=sys.stderr)
+            video_file_path = video_downloader.download_video(url, output_dir)
             
-            # 重新初始化ASR转录器（使用默认VAD设置）
+            # 2. 下载音频文件（用于转录）
+            print("🔽 开始下载音频...", file=sys.stderr)
+            audio_file_path = video_downloader.download_audio_only(url, output_dir)
+            
+            # 3. 重新初始化ASR转录器（使用默认VAD设置）
             transcriber = ASRTranscriber(enable_vad=True)
             
-            # 转录音频
+            # 4. 转录音频
             print("🎤 开始转录...", file=sys.stderr)
             result = transcriber.transcribe_audio(
-                audio_path=audio_file,
+                audio_path=audio_file_path,
                 language=language,
                 max_length=5,  # 默认5秒分段
                 batch_size=600  # 默认批处理大小
             )
             
-            # 格式化输出
-            output = format_transcription_output(result, output_format, video_info)
+            # 5. 格式化输出并保存到文件
+            output_content = format_transcription_output(result, output_format, video_info)
             
-            return f"✅ 转录完成！\n\n📹 视频: {video_info['title']}\n⏱️ 时长: {video_info['duration']}秒\n🎯 格式: {output_format}\n\n{output}"
+            # 6. 保存转录文件
+            if output_format == "srt":
+                transcript_file_path = os.path.join(output_dir, f"{safe_title}.srt")
+            elif output_format == "vtt":
+                transcript_file_path = os.path.join(output_dir, f"{safe_title}.vtt")
+            elif output_format == "json":
+                transcript_file_path = os.path.join(output_dir, f"{safe_title}.json")
+            else:  # text
+                transcript_file_path = os.path.join(output_dir, f"{safe_title}.txt")
             
-        finally:
-            # 清理临时文件
-            import shutil
-            if os.path.exists(temp_dir):
-                shutil.rmtree(temp_dir)
+            with open(transcript_file_path, 'w', encoding='utf-8') as f:
+                f.write(output_content)
+            
+            # 7. 构建返回结果
+            result_info = f"""✅ 转录完成！
+
+📹 **视频信息**:
+• 标题: {video_info['title']}
+• 时长: {video_info['duration']}秒 ({video_info['duration']//60}分{video_info['duration']%60}秒)
+• 格式: {output_format}
+
+📁 **文件保存位置**:
+• 📹 视频文件: {video_file_path}
+• 🎵 音频文件: {audio_file_path}
+• 📝 转录文件: {transcript_file_path}
+• 📂 输出目录: {output_dir}
+
+🔍 **转录预览**:
+{output_content[:500]}{"..." if len(output_content) > 500 else ""}"""
+
+            return result_info
+            
+        except Exception as inner_e:
+            # 如果过程中出错，也返回已保存的文件信息
+            error_info = f"⚠️ 转录过程中出现错误: {str(inner_e)}\n\n"
+            if video_file_path and os.path.exists(video_file_path):
+                error_info += f"📹 已保存视频文件: {video_file_path}\n"
+            if audio_file_path and os.path.exists(audio_file_path):
+                error_info += f"🎵 已保存音频文件: {audio_file_path}\n"
+            if transcript_file_path and os.path.exists(transcript_file_path):
+                error_info += f"📝 已保存转录文件: {transcript_file_path}\n"
+            return error_info
                 
     except Exception as e:
         return f"❌ 转录失败: {str(e)}"
@@ -138,19 +184,33 @@ def transcribe_local_file(
         audio_exts = ['.wav', '.mp3', '.flac', '.m4a', '.aac']
         video_exts = get_supported_video_formats()
         
-        temp_dir = tempfile.mkdtemp(prefix="mcp_asr_local_")
+        # 创建持久输出目录
+        import datetime
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe_title = file_path.stem[:50]  # 限制长度
+        output_dir = os.path.join(os.getcwd(), "transcriptions", f"{timestamp}_{safe_title}_local")
+        os.makedirs(output_dir, exist_ok=True)
+        
+        audio_file_path = None
+        transcript_file_path = None
         
         try:
             if file_ext in audio_exts:
-                # 直接处理音频文件
-                audio_file = str(file_path)
+                # 直接处理音频文件，复制到输出目录
+                import shutil
+                audio_file_path = os.path.join(output_dir, f"{safe_title}_audio{file_ext}")
+                shutil.copy2(str(file_path), audio_file_path)
+                audio_file = audio_file_path
             elif file_ext in video_exts:
+                # 复制原视频文件
+                import shutil
+                video_file_path = os.path.join(output_dir, f"{safe_title}_video{file_ext}")
+                shutil.copy2(str(file_path), video_file_path)
+                
                 # 从视频提取音频
                 print("🎬 从视频提取音频...", file=sys.stderr)
-                audio_file = extract_audio_from_video(
-                    str(file_path),
-                    os.path.join(temp_dir, "extracted_audio.wav")
-                )
+                audio_file_path = os.path.join(output_dir, f"{safe_title}_extracted_audio.wav")
+                audio_file = extract_audio_from_video(str(file_path), audio_file_path)
             else:
                 return f"❌ 不支持的文件格式: {file_ext}"
             
@@ -166,17 +226,49 @@ def transcribe_local_file(
                 batch_size=600  # 默认批处理大小
             )
             
-            # 格式化输出
+            # 格式化输出并保存到文件
             file_info = {"title": file_path.stem, "duration": 0}
-            output = format_transcription_output(result, output_format, file_info)
+            output_content = format_transcription_output(result, output_format, file_info)
             
-            return f"✅ 转录完成！\n\n📁 文件: {file_path.name}\n🎯 格式: {output_format}\n\n{output}"
+            # 保存转录文件
+            if output_format == "srt":
+                transcript_file_path = os.path.join(output_dir, f"{safe_title}.srt")
+            elif output_format == "vtt":
+                transcript_file_path = os.path.join(output_dir, f"{safe_title}.vtt")
+            elif output_format == "json":
+                transcript_file_path = os.path.join(output_dir, f"{safe_title}.json")
+            else:  # text
+                transcript_file_path = os.path.join(output_dir, f"{safe_title}.txt")
             
-        finally:
-            # 清理临时文件
-            import shutil
-            if os.path.exists(temp_dir):
-                shutil.rmtree(temp_dir)
+            with open(transcript_file_path, 'w', encoding='utf-8') as f:
+                f.write(output_content)
+            
+            # 构建返回结果
+            result_info = f"""✅ 转录完成！
+
+📁 **文件信息**:
+• 原文件: {file_path}
+• 文件类型: {file_ext} ({'Audio' if file_ext in audio_exts else 'Video'})
+• 格式: {output_format}
+
+📁 **文件保存位置**:
+• 🎵 音频文件: {audio_file_path}
+• 📝 转录文件: {transcript_file_path}
+• 📂 输出目录: {output_dir}
+
+🔍 **转录预览**:
+{output_content[:500]}{"..." if len(output_content) > 500 else ""}"""
+
+            return result_info
+            
+        except Exception as inner_e:
+            # 如果过程中出错，也返回已保存的文件信息
+            error_info = f"⚠️ 转录过程中出现错误: {str(inner_e)}\n\n"
+            if audio_file_path and os.path.exists(audio_file_path):
+                error_info += f"🎵 已保存音频文件: {audio_file_path}\n"
+            if transcript_file_path and os.path.exists(transcript_file_path):
+                error_info += f"📝 已保存转录文件: {transcript_file_path}\n"
+            return error_info
                 
     except Exception as e:
         return f"❌ 转录失败: {str(e)}"
